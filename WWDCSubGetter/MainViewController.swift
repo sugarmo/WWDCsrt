@@ -58,6 +58,7 @@ enum WWDC: String {
 	
 }
 
+
 final class MainViewController: NSViewController, TextFileViewDelegate, NSTextFieldDelegate, NSComboBoxCellDataSource, NSComboBoxDataSource, NSComboBoxDelegate, ProgressView {
     
     // MARK: - Enums
@@ -93,7 +94,9 @@ final class MainViewController: NSViewController, TextFileViewDelegate, NSTextFi
     
     @IBOutlet weak var tabView: NSTabView!
     @IBOutlet weak  var comboBox: NSComboBox!
-    @IBOutlet weak var popUpButton: NSPopUpButton!
+    @IBOutlet weak var eventButton: NSPopUpButton!
+    @IBOutlet weak var languageButton: NSPopUpButton!
+    @IBOutlet weak var subtitleOptionsView: NSView!
     @IBOutlet weak var videoLinkTextField: NSTextField!
     @IBOutlet weak var textFileViewLabel: NSTextField!
     @IBOutlet weak var singleSessionButton: NSButton!
@@ -134,7 +137,12 @@ final class MainViewController: NSViewController, TextFileViewDelegate, NSTextFi
 	
     /// A computed property whic gets selected wwdc based on `popUpButton` selection
     var selectedWWDC: WWDC {
-        return WWDC(rawValue: self.popUpButton.selectedItem!.title)!
+        return WWDC(rawValue: self.eventButton.selectedItem!.title)!
+    }
+
+    var selectedLanuage: Subtitle.Language {
+        let dict = [ "English" : Subtitle.Language.english, "Japanese" : Subtitle.Language.japanese, "Chinese" : Subtitle.Language.chinese ]
+        return dict[self.languageButton.selectedItem!.title]!
     }
     
     /// A computed property whic gets a subtitle array based on `selectedWWDC`
@@ -205,7 +213,7 @@ final class MainViewController: NSViewController, TextFileViewDelegate, NSTextFi
     
     // MARK: - Session tabView methods
     
-    @IBAction func popUpButtonClicked(_ sender: NSPopUpButton) {
+    @IBAction func eventButtonClicked(_ sender: AnyObject?) {
 //        self.getSubtitlesForSelectedWWDC()
 		self.getSessionsListForSelecteWWDC()
 
@@ -218,8 +226,6 @@ final class MainViewController: NSViewController, TextFileViewDelegate, NSTextFi
 		self.session = nil
 		self.comboBox.stringValue = ""
 		self.toggleSession(for: self.session)
-
-
     }
     
     // MARK: Radio buttons methods
@@ -248,7 +254,11 @@ final class MainViewController: NSViewController, TextFileViewDelegate, NSTextFi
 		self.getState = .subtitle
 		self.toggleGetState(for: self.getState)
 	}
-	
+    
+    @IBAction func languageButtonClicked(_ sender: NSPopUpButton) {
+
+    }
+
 	@IBAction func getDownloadLinksSelected(_ sender: NSButton) {
 		self.getState = .downloadLinks
 		self.toggleGetState(for: self.getState)
@@ -260,7 +270,9 @@ final class MainViewController: NSViewController, TextFileViewDelegate, NSTextFi
 		self.getDownloadLinkRadioButton.state = getState == .subtitle ? .off : .on
 		self.getDownloadLinkRadioButton.title = getState == .subtitle ? "Get Download Links" : "Get Download Links for"
 		self.checkmarksView.alphaValue = getState == .subtitle ? 0.0 : 1.0
-		
+
+        self.getSubtitleRadioButton.title = getState == .downloadLinks ? "Get Subtitles" : "Get Subtitles for"
+        self.subtitleOptionsView.alphaValue = getState == .downloadLinks ? 0.0 : 1.0
 	}
 	
 	@IBAction func hdRadioButtonAction(_ sender: NSButton) {
@@ -508,7 +520,8 @@ final class MainViewController: NSViewController, TextFileViewDelegate, NSTextFi
 					}
 					let hdVideoLinksArray = data.components(separatedBy: "\n").filter { $0.contains(searchString) }
 					if let videoLink = hdVideoLinksArray.first {
-						if let subtitle = Subtitle(videoURL: videoLink) {
+						if var subtitle = Subtitle(videoURL: videoLink) {
+                            subtitle.language = selectedLanuage
 							model.update(subtitle)
 						}
 					}
@@ -749,7 +762,7 @@ final class MainViewController: NSViewController, TextFileViewDelegate, NSTextFi
     
     /// This method gets subtitle array based on popUp button selection and caches it in `wwdcVideosSubtitlesDic`.
     func getSubtitlesForSelectedWWDC() {
-        let selectedYear = self.popUpButton.selectedItem!.title
+        let selectedYear = self.eventButton.selectedItem!.title
         let selectedWWDC = WWDC(rawValue: selectedYear)!
         
         guard self.wwdcVideosSubtitlesDic[selectedWWDC] == nil else {
@@ -772,7 +785,7 @@ final class MainViewController: NSViewController, TextFileViewDelegate, NSTextFi
 	
 	
 	func getSessionsListForSelecteWWDC(checkForExistingCache: Bool = true) {
-		let wwdcYear = self.popUpButton.selectedItem!.title
+		let wwdcYear = self.eventButton.selectedItem!.title
 		let selectedWWDC = WWDC(rawValue: wwdcYear)!
 		
 		let titleURL = linksModel.titlesCacheURLFor(selectedWWDC)
@@ -814,7 +827,8 @@ final class MainViewController: NSViewController, TextFileViewDelegate, NSTextFi
 		
 		self.getButton.isEnabled = false
 		self.comboBox.isEnabled = false
-		self.popUpButton.isEnabled = false
+		self.eventButton.isEnabled = false
+        self.languageButton.isEnabled = false
 		self.circularIndicator.startAnimation(nil)
 		
 		let getLinksOperation = GetLinksOperation(for: types, wwdcYear: wwdcYear, sessionNumber: sessionNumber, copyToUserDestinationURL: copyToUserDestinationURL) {
@@ -822,7 +836,8 @@ final class MainViewController: NSViewController, TextFileViewDelegate, NSTextFi
 			DispatchQueue.main.async {
 				self.getButton.isEnabled = true
 				self.comboBox.isEnabled = true
-				self.popUpButton.isEnabled = true
+				self.eventButton.isEnabled = true
+                self.languageButton.isEnabled = true
 				self.circularIndicator.stopAnimation(nil)
 				completionHandler()
 			}

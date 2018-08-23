@@ -42,6 +42,11 @@ func ==(lhs: Webvtt, rhs: Webvtt) -> Bool {
 
 /// A struct for saving and managing video link informations.
 struct Subtitle: Comparable {
+    enum Language: String {
+        case english = "eng"
+        case chinese = "zho"
+        case japanese = "jpn"
+    }
 	
 	/// This is the pattern we use to verify valid WWDC Video links.
 	private let pattern = "(http(?:s)?:\\/\\/devstreaming[\\S\\w]*.apple.com\\/videos\\/[wdctuiorals]+\\/)(\\d+)(\\/\\w+\\/)(\\w+)(\\/)(\\w+(?:-)?\\w+)\\.m[op4][v4](?:\\?dl\\=1)?"
@@ -60,6 +65,9 @@ struct Subtitle: Comparable {
 	
 	/// The given WWDC Video name
 	let videoName: String
+
+    /// The language of subtitle
+    var language: Language = .english
 	
 	/*
 	We export subtitles for both SD and HD version of videos.
@@ -135,7 +143,7 @@ struct Subtitle: Comparable {
 	
 	/// This method gives url for download webvtt file related to given webvtt.
 	func url(for webvtt: Webvtt) -> URL {
-		let webvttFileURL = self.videoURLPrefix + "subtitles/eng/" + webvtt.name
+        let webvttFileURL = self.videoURLPrefix + "subtitles" + "/\(language.rawValue)/" + webvtt.name
 		return URL(string: webvttFileURL)!
 	}
 	

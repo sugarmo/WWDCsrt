@@ -219,7 +219,7 @@ class WWDCVideosController {
 		
 		print("[Session \(sessionIdentifier)] Getting \(fileName) (\(urlString)):")
 		
-		guard let url = URL(string: urlString) else {
+		guard URL(string: urlString) != nil else {
 			print("<\(urlString)> is not valid URL!")
 			return
 		}
